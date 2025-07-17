@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canada: A Wine Master's Challenge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .card {
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+        .card.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+        }
+        .timeline-item.correct {
+            background-color: #166534; /* green-700 */
+            border-color: #15803d; /* green-600 */
+        }
+        .timeline-item.incorrect {
+            background-color: #991b1b; /* red-800 */
+            border-color: #b91c1c; /* red-700 */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <div id="app-container" class="min-h-screen flex flex-col items-center justify-center p-4">
+
+        <!-- Main Menu Screen -->
+        <div id="main-menu" class="w-full max-w-4xl text-center">
+            <h1 class="text-4xl md:text-5xl font-bold text-purple-400 mb-2">Canada</h1>
+            <h2 class="text-2xl md:text-3xl font-semibold mb-8">A Wine Master's Challenge</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                <button data-module="historian" class="module-btn bg-gray-800 hover:bg-purple-700 text-white font-bold py-6 px-4 rounded-lg transition duration-300">The Historian's Scroll</button>
+                <button data-module="terroir" class="module-btn bg-gray-800 hover:bg-purple-700 text-white font-bold py-6 px-4 rounded-lg transition duration-300">The Terroir Architect</button>
+                <button data-module="ampelographer" class="module-btn bg-gray-800 hover:bg-purple-700 text-white font-bold py-6 px-4 rounded-lg transition duration-300">The Ampelographer's Challenge</button>
+                <button data-module="lawmaker" class="module-btn bg-gray-800 hover:bg-purple-700 text-white font-bold py-6 px-4 rounded-lg transition duration-300">The Lawmaker's Desk</button>
+                <button data-module="gastronome" class="module-btn bg-gray-800 hover:bg-purple-700 text-white font-bold py-6 px-4 rounded-lg transition duration-300">The Gastronome's Table</button>
+                <button data-module="critic" class="module-btn bg-gray-800 hover:bg-purple-700 text-white font-bold py-6 px-4 rounded-lg transition duration-300">The Critic's Corner</button>
+            </div>
+
+            <div class="w-full flex justify-center">
+                 <button data-module="flashcards" class="module-btn bg-gray-700 hover:bg-purple-600 text-white font-bold py-6 px-4 rounded-lg transition duration-300 w-full md:w-1/2 lg:w-1/3">Flashcard Study</button>
+            </div>
+
+            <button id="ai-settings-btn" class="mt-8 text-gray-400 hover:text-white transition">⚙️ AI Settings</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="hidden w-full max-w-4xl">
+            <div class="bg-gray-800 p-6 rounded-lg shadow-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="module-title" class="text-2xl font-bold text-purple-400">Module Title</h2>
+                    <div id="score-counter" class="text-lg">Score: 0</div>
+                </div>
+                <div id="question-counter" class="text-right text-gray-400 mb-4"></div>
+                
+                <!-- Timeline Challenge Container -->
+                <div id="timeline-container" class="hidden">
+                    <!-- populated by JS -->
+                </div>
+
+                <!-- Multiple Choice Container -->
+                <div id="mc-container" class="hidden">
+                    <p id="question-text" class="text-xl mb-6 min-h-[6rem]"></p>
+                    <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Options populated by JS -->
+                    </div>
+                </div>
+                
+                <!-- Flashcard Container -->
+                <div id="flashcard-container" class="hidden">
+                    <div class="perspective-1000 w-full h-80 mb-4">
+                        <div id="flashcard" class="card relative w-full h-full">
+                            <div id="flashcard-front" class="card-face absolute w-full h-full bg-gray-700 rounded-lg flex items-center justify-center p-4 text-center"></div>
+                            <div id="flashcard-back" class="card-face card-back absolute w-full h-full bg-purple-800 rounded-lg flex items-center justify-center p-4 text-center"></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <button id="prev-card-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">Previous</button>
+                        <div id="flashcard-progress"></div>
+                        <button id="next-card-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">Next</button>
+                    </div>
+                </div>
+
+                <div id="explanation-panel" class="mt-4 p-4 bg-gray-900 rounded-lg hidden"></div>
+                <div id="ai-button-panel" class="mt-4 hidden"></div>
+
+                <div class="mt-6 flex justify-between">
+                    <button id="main-menu-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Main Menu</button>
+                    <button id="next-question-btn" class="hidden bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">Next Question</button>
+                    <button id="submit-timeline-btn" class="hidden bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">Submit Timeline</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-backdrop" class="fixed inset-0 bg-black bg-opacity-70 hidden flex items-center justify-center z-50">
+        <!-- Welcome Modal -->
+        <div id="welcome-modal" class="modal-content bg-gray-800 text-white p-8 rounded-lg shadow-xl max-w-md w-full text-center hidden">
+            <h3 class="text-2xl font-bold text-purple-400 mb-4">Welcome!</h3>
+            <p class="mb-6">This is "Canada: A Wine Master's Challenge," an interactive study tool to help you master the intricacies of Canadian wine. All questions are based on the provided expert research document. Good luck!</p>
+            <button class="modal-close-btn bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">Let's Begin</button>
+        </div>
+
+        <!-- Instruction Modal -->
+        <div id="instruction-modal" class="modal-content bg-gray-800 text-white p-8 rounded-lg shadow-xl max-w-md w-full text-center hidden">
+            <h3 id="instruction-title" class="text-2xl font-bold text-purple-400 mb-4"></h3>
+            <p id="instruction-text" class="mb-6"></p>
+            <button class="modal-close-btn bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">Start</button>
+        </div>
+        
+        <!-- End of Game Modal -->
+        <div id="end-game-modal" class="modal-content bg-gray-800 text-white p-8 rounded-lg shadow-xl max-w-md w-full text-center hidden">
+            <h3 class="text-2xl font-bold text-purple-400 mb-4">Module Complete!</h3>
+            <p class="mb-2 text-lg">Your final score is:</p>
+            <p id="final-score" class="text-4xl font-bold mb-6"></p>
+            <p class="mb-6">Play again to get a new set of questions and improve your score!</p>
+            <button class="modal-close-btn bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">Return to Menu</button>
+        </div>
+        
+        <!-- AI Settings Modal -->
+        <div id="ai-settings-modal" class="modal-content bg-gray-800 text-white p-8 rounded-lg shadow-xl max-w-lg w-full hidden">
+            <h3 class="text-2xl font-bold text-purple-400 mb-4">AI Settings</h3>
+            <p class="mb-4 text-gray-300">To use the AI-powered features, please enter your Google AI Studio API key. You can get a key at <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-purple-400 hover:underline">aistudio.google.com/app/apikey</a>.</p>
+            <p class="mb-4 text-sm text-yellow-400">Security Reminder: Treat your API key like a password. It is saved in your browser's local storage for convenience but is not transmitted anywhere else.</p>
+            <input type="password" id="api-key-input" class="w-full p-2 rounded bg-gray-700 border border-gray-600 mb-4" placeholder="Enter your API key here">
+            <div class="flex justify-between">
+                <button class="modal-close-btn bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Cancel</button>
+                <button id="save-api-key-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">Save Key</button>
+            </div>
+        </div>
+
+        <!-- Flashcard Deck Builder Modal -->
+        <div id="flashcard-deck-builder" class="modal-content bg-gray-800 text-white p-8 rounded-lg shadow-xl max-w-md w-full hidden">
+            <h3 class="text-2xl font-bold text-purple-400 mb-4">Build Your Flashcard Deck</h3>
+            <p class="mb-6">Select the topics you want to study.</p>
+            <div id="flashcard-topics" class="space-y-2 text-left mb-6">
+                <!-- Checkboxes populated by JS -->
+            </div>
+            <div class="flex justify-between">
+                <button class="modal-close-btn bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Cancel</button>
+                <button id="start-flashcard-session-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">Start Studying</button>
+            </div>
+        </div>
+
+        <!-- AI Response Modal -->
+        <div id="ai-response-modal" class="modal-content bg-gray-800 text-white p-8 rounded-lg shadow-xl max-w-2xl w-full hidden overflow-y-auto max-h-[90vh]">
+             <h3 id="ai-response-title" class="text-2xl font-bold text-purple-400 mb-4"></h3>
+             <div id="ai-response-content" class="prose prose-invert max-w-none text-gray-300"></div>
+             <button class="modal-close-btn mt-6 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">Close</button>
+        </div>
+
+    </div>
+
+<script>
+// --- DATA STORE ---
+// All questions are derived exclusively from the provided research document.
+const gameData = {
+    regionName: "Canada",
+    historian: {
+        title: "The Historian's Scroll",
+        instructions: "Tap the events in the correct chronological order to build the timeline. Then, press 'Submit' to see your result.",
+        questions: [
+            {
+                title: "Early History & Colonial Era",
+                events: [
+                    { year: 1000, text: "Leif Eriksson reaches the east coast of Canada, naming it 'Vinland' due to wild grapes." },
+                    { year: 1535, text: "Jacques Cartier sails up the St. Lawrence River and names an island 'Île de Bacchus' (now Île d’Orléans)." },
+                    { year: 1611, text: "French apothecary Louis Hébert plants a vineyard in Nova Scotia." },
+                    { year: 1811, text: "Johann Schiller establishes a vineyard west of Toronto, domesticating local Vitis labrusca." },
+                    { year: 1866, text: "Canada's first commercial winery, Vin Villa, is established on Pelee Island, Ontario." }
+                ]
+            },
+            {
+                title: "Prohibition & Consolidation",
+                events: [
+                    { year: 1916, text: "The Ontario Temperance Act is passed, restricting alcohol sales but allowing production for export." },
+                    { year: 1927, text: "The Ontario Temperance Act is repealed, leading to the establishment of the LCBO." },
+                    { year: 1933, text: "The end of American Prohibition causes a collapse in the number of Ontario wineries." },
+                    { year: 1956, text: "Brights Winery produces Ontario's first 100% Vitis vinifera wine, a Chardonnay." },
+                    { year: 1974, text: "The nearly 50-year moratorium on new winery licenses is lifted, opening the door for the modern era." }
+                ]
+            },
+            {
+                title: "The Modern Quality Revolution",
+                events: [
+                    { year: 1975, text: "Inniskillin receives the first new winery license in Ontario, focusing on Vitis vinifera." },
+                    { year: 1978, text: "Walter Hainle produces Canada's first Icewine in British Columbia." },
+                    { year: 1988, text: "The Canada-U.S. Free Trade Agreement (CUSFTA) is signed, forcing the industry to compete on quality." },
+                    { year: 1988, text: "A government-funded vine pull-out program begins, replacing hybrids with vinifera." },
+                    { year: 1991, text: "Inniskillin's 1989 Vidal Icewine wins the Grand Prix d’Honneur at Vinexpo." }
+                ]
+            },
+            {
+                title: "Legislative Solidification",
+                events: [
+                    { year: 1988, text: "The Vintners Quality Alliance (VQA) is established by producers in Ontario." },
+                    { year: 1990, text: "British Columbia establishes its own Vintners Quality Alliance (BC VQA)." },
+                    { year: 1999, text: "The Vintners Quality Alliance Act is passed in Ontario, making VQA a legal standard." },
+                    { year: 2005, text: "The 'Wines of Marked Quality Regulation' is enacted in BC, giving the BC VQA legal authority." },
+                    { year: 2018, text: "Quebec establishes the Indication Géographique Protégée (IGP) Vin du Québec." }
+                ]
+            }
+        ]
+    },
+    terroir: {
+        title: "The Terroir Architect",
+        instructions: "Answer 10 multiple-choice questions about the geology, geography, and climate of Canada's wine regions.",
+        bank: [
+            { question: "What is the primary parent rock found below the Niagara Escarpment in Ontario?", options: ["Queenston Shale", "Granite", "Basalt", "Muschelkalk"], answer: "Queenston Shale", explanation: "Vineyards below the Niagara Escarpment are predominantly underlain by the reddish, iron-rich Queenston Shale of the Ordovician period." },
+            { question: "In which Canadian wine region is irrigation considered a viticultural necessity due to a desert-like climate?", options: ["Niagara Peninsula", "Prince Edward County", "Okanagan Valley", "Nova Scotia"], answer: "Okanagan Valley", explanation: "The arid, desert-like climate of the South Okanagan and Similkameen Valleys receives minimal rainfall, making irrigation essential for vine survival." },
+            { question: "What is the single greatest and most persistent viticultural threat in both Ontario and British Columbia?", options: ["Spring Frost", "Wildfire Smoke Taint", "Extreme Winter Cold (Winter Kill)", "Drought"], answer: "Extreme Winter Cold (Winter Kill)", explanation: "Extreme Winter Cold (Winter Kill) is the single greatest threat. Temperatures below -20°C can cause significant damage, and severe cold snaps can kill vines entirely." },
+            { question: "The soils of the Niagara Peninsula are almost entirely of what origin?", options: ["Volcanic", "Alluvial", "Glacio-lacustrine deposits", "Marine sediment"], answer: "Glacio-lacustrine deposits", explanation: "The soils of the Niagara Peninsula are almost entirely of glacial origin, composed of glacio-lacustrine deposits left by the ancient, post-glacial Lake Iroquois." },
+            { question: "Which two geographical features are the key climate moderators for the Niagara Peninsula?", options: ["Lake Erie and the Niagara River", "Lake Ontario and the Niagara Escarpment", "The Appalachian Mountains and Hudson River", "The Great Plains and Lake Huron"], answer: "Lake Ontario and the Niagara Escarpment", explanation: "The deep waters of Lake Ontario act as a massive thermal regulator, and the Niagara Escarpment helps to trap and circulate this moderated air over the vineyards." },
+            { question: "The Okanagan Valley lies in the rain shadow of which two mountain ranges?", options: ["The Rocky Mountains and the Appalachians", "The Sierra Nevada and the Rockies", "The Coast and Cascade Mountains", "The Laurentian and Appalachian Mountains"], answer: "The Coast and Cascade Mountains", explanation: "The Okanagan Valley lies in the rain shadow of the towering Coast and Cascade Mountains to the west, which creates a uniquely warm and dry climate." },
+            { question: "What type of soil dominates the valley floor in the South Okanagan, ideal for full-bodied red wines?", options: ["Heavy clay and loam", "Shallow limestone", "Fluvio-glacial sands and gravels", "Volcanic basalt"], answer: "Fluvio-glacial sands and gravels", explanation: "The South Okanagan is dominated by deep, coarse fluvio-glacial sands and gravels. These extremely well-draining, low-nutrient soils are ideal for powerful red wines." },
+            { question: "What is the defining characteristic of Prince Edward County's soil?", options: ["Deep volcanic ash", "Shallow, stony soils over fractured limestone", "Rich, fertile river silt", "Iron-rich clay"], answer: "Shallow, stony soils over fractured limestone", explanation: "Prince Edward County is defined by its shallow, stony soils over a fractured limestone bedrock base (Hillier clay loam), which is ideal for high-quality, mineral-driven wines." },
+            { question: "Which sub-GI in British Columbia is known as Canada's 'organic capital' due to its powerful winds reducing disease pressure?", options: ["Naramata Bench", "Golden Mile Bench", "Similkameen Valley", "Cowichan Valley"], answer: "Similkameen Valley", explanation: "The Similkameen Valley is known as Canada's 'organic capital.' A defining feature is the powerful wind that funnels through the valley, reducing disease pressure and making it ideal for organic viticulture." },
+            { question: "What is the signature appellation of Nova Scotia, which defines a wine style rather than just a geographical area?", options: ["Annapolis Valley", "Tidal Bay", "Gaspereau Valley", "L'Acadie Blanc"], answer: "Tidal Bay", explanation: "Nova Scotia's signature appellation, Tidal Bay, defines a style: a crisp, aromatic, dry-ish white wine made from 100% Nova Scotian grapes that showcases the region's classic lively acidity and minerality." },
+            { question: "What is the average annual precipitation in the Okanagan Valley?", options: ["Approx. 850–950 mm", "Approx. 600–700 mm", "Approx. 300–400 mm", "Approx. 1000-1200 mm"], answer: "Approx. 300–400 mm", explanation: "The Okanagan Valley is significantly drier than Niagara, with an average annual precipitation of approximately 300–400 mm, classifying its southern end as a desert." },
+            { question: "The Niagara Escarpment is a cuesta capped by what type of resistant rock?", options: ["Granite", "Basalt", "Sandstone", "Silurian dolostone and limestone"], answer: "Silurian dolostone and limestone", explanation: "The Niagara Escarpment is capped by resistant Silurian dolostone and limestone, which is harder than the underlying shale, creating its distinctive ridge." },
+            { question: "The soils of the South Okanagan were largely deposited by what ancient geological feature?", options: ["A volcanic eruption", "Glacial Lake Penticton", "The Fraser River", "A meteorite impact"], answer: "Glacial Lake Penticton", explanation: "The diverse soils of the Okanagan were shaped by glaciation, with deposits from the massive Glacial Lake Penticton being subsequently reworked by river action." },
+            { question: "Which BC GI is a cool, maritime region concentrated on the eastern side of a large island?", options: ["Fraser Valley", "Gulf Islands", "Vancouver Island", "Similkameen Valley"], answer: "Vancouver Island", explanation: "Vancouver Island is a cool, maritime GI where viticulture is concentrated on its eastern side, shielded from Pacific storms by mountains." },
+            { question: "What powerful tidal body has a profound moderating influence on Nova Scotia's vineyards?", options: ["The Atlantic Ocean", "The St. Lawrence Seaway", "The Bay of Fundy", "The Northumberland Strait"], answer: "The Bay of Fundy", explanation: "The Bay of Fundy's massive tides, the highest in the world, have a profound moderating influence on the nearby vineyards in Nova Scotia." },
+            { question: "The Hillier clay loam is the characteristic stony, limestone-based soil of which DVA?", options: ["Niagara Peninsula", "Lake Erie North Shore", "Prince Edward County", "Okanagan Valley"], answer: "Prince Edward County", explanation: "Prince Edward County's terroir is defined by its shallow, stony soils over a fractured limestone bedrock base, known as Hillier clay loam." },
+            { question: "Which Ontario DVA has the longest growing season and highest heat units?", options: ["Niagara Peninsula", "Prince Edward County", "Lake Erie North Shore", "Emerging Regions"], answer: "Lake Erie North Shore", explanation: "As Canada's southernmost wine region, Lake Erie North Shore benefits from the longest growing season and highest heat units in Ontario, thanks to the shallow, warm waters of Lake Erie." },
+            { question: "What is the name of the extinct volcano near the Summerland Bench sub-GI in the Okanagan?", options: ["Mount Boucherie", "Giant's Head Mountain", "Blackcomb Peak", "Mount Robson"], answer: "Giant's Head Mountain", explanation: "The Summerland Bench sub-GI in the Okanagan Valley contains an extinct volcano, Giant’s Head Mountain." },
+            { question: "The Shuswap GI is one of North America's most northerly wine regions, moderated by what large body of water?", options: ["Okanagan Lake", "Shuswap Lake", "Lake Huron", "The Fraser River"], answer: "Shuswap Lake", explanation: "The Shuswap GI is defined by the moderating influence of the massive Shuswap Lake, which makes viticulture possible at this northern latitude." },
+            { question: "Why must vines in Prince Edward County be buried for the winter?", options: ["To protect from deer", "To protect from heavy snowfall", "To protect from colder winter temperatures than Niagara", "To encourage deeper roots"], answer: "To protect from colder winter temperatures than Niagara", explanation: "Winters in Prince Edward County are significantly colder than in Niagara, requiring growers to bury their vines or use geotextiles for protection against winter kill." },
+            { question: "What is the primary soil type of the Niagara Lakeshore sub-appellation?", options: ["Heavy clay and silt", "Sandy and clay loams", "Gravel and limestone", "Volcanic rock"], answer: "Sandy and clay loams", explanation: "The Niagara Lakeshore sub-appellation features soils of mainly sandy and clay loams over a bedrock of red shale." },
+            { question: "The Golden Mile Bench sub-GI is on which side of the Okanagan Valley, giving it morning sun exposure?", options: ["East side", "West side", "North end", "South end"], answer: "West side", explanation: "The Golden Mile Bench is on the west side of the valley, receiving morning sun rather than the hotter afternoon sun, which moderates its climate." },
+            { question: "Which BC GI is centered around the city of Kamloops and the Thompson River?", options: ["Shuswap", "Lillooet", "Thompson Valley", "Kootenays"], answer: "Thompson Valley", explanation: "The inland Thompson Valley GI is centered on the city of Kamloops, with vineyards located along the Thompson and North Thompson Rivers." },
+            { question: "What is the 'lake effect' in the Niagara Peninsula?", options: ["It causes heavier snowfall", "It creates a convection pattern of air circulation that moderates temperatures", "It increases humidity to dangerous levels", "It causes the lake to freeze solid"], answer: "It creates a convection pattern of air circulation that moderates temperatures", explanation: "Lake Ontario breezes hit the Niagara Escarpment, are forced upward, and roll back over the plain, moderating temperatures year-round and extending the growing season." },
+            { question: "The Vinemount Ridge sub-appellation is unique in Niagara for what reason?", options: ["It is the coldest sub-appellation", "It sits on top of the Niagara Escarpment", "It is the only region that grows Syrah", "It has purely sandy soils"], answer: "It sits on top of the Niagara Escarpment", explanation: "Unlike other Niagara sub-appellations on the benches or plains, Vinemount Ridge sits on top of the Niagara Escarpment, giving it a different mesoclimate." },
+            { question: "Which BC sub-GI is located on Vancouver Island?", options: ["Naramata Bench", "Golden Mile Bench", "Skaha Bench", "Cowichan Valley"], answer: "Cowichan Valley", explanation: "The Cowichan Valley, established in 2020, is a sub-GI of the Vancouver Island GI and is the island's viticultural hub." },
+            { question: "What is the dominant soil type in the Similkameen Valley?", options: ["Volcanic basalt", "Heavy clay", "Stony, gravelly, and silty loams rich in calcium carbonate", "Peat and muck soils"], answer: "Stony, gravelly, and silty loams rich in calcium carbonate", explanation: "The Similkameen Valley's terroir is defined by stony, gravelly, and silty loam soils rich in calcium carbonate, derived from glacial and fluvial deposits." },
+            { question: "The Beamsville Bench, Twenty Mile Bench, and Short Hills Bench are all sub-appellations of which regional appellation?", options: ["Niagara-on-the-Lake", "Lake Erie North Shore", "Niagara Escarpment", "Prince Edward County"], answer: "Niagara Escarpment", explanation: "These three 'bench' sub-appellations make up the Niagara Escarpment regional appellation, known for its limestone-influenced, mineral-driven wines." },
+            { question: "Which BC GI is composed of a collection of islands in the Strait of Georgia?", options: ["Vancouver Island", "Fraser Valley", "Gulf Islands", "Shuswap"], answer: "Gulf Islands", explanation: "The Gulf Islands GI comprises several islands like Salt Spring, Pender, and Saturna, located between Vancouver Island and the mainland." },
+            { question: "What is the primary viticultural risk of the Fraser Valley's mild but damp maritime climate?", options: ["Drought", "Extreme winter cold", "High disease pressure (e.g., mildew)", "Sunburn on grapes"], answer: "High disease pressure (e.g., mildew)", explanation: "The humidity from ocean breezes in the Fraser Valley increases the susceptibility of vines to fungal diseases like powdery and downy mildew." },
+        ]
+    },
+    ampelographer: {
+        title: "The Ampelographer's Challenge",
+        instructions: "Answer 10 multiple-choice questions about the key grape varieties grown in Canada.",
+        bank: [
+            { question: "What is the undisputed workhorse grape of Ontario's Icewine industry?", options: ["Riesling", "Chardonnay", "Vidal Blanc", "Gewürztraminer"], answer: "Vidal Blanc", explanation: "The French hybrid grape Vidal Blanc is the undisputed workhorse of Ontario's iconic Icewine industry due to its extreme winter hardiness and thick skins.", subjectType: "grape", subjectName: "Vidal Blanc" },
+            { question: "Which red grape variety is considered Ontario's most important and reliable due to its winter hardiness and consistent ripening?", options: ["Merlot", "Cabernet Sauvignon", "Pinot Noir", "Cabernet Franc"], answer: "Cabernet Franc", explanation: "Cabernet Franc is Ontario's most important red grape. Its key advantage is its superior winter hardiness and ability to ripen consistently in Niagara's shorter growing season.", subjectType: "grape", subjectName: "Cabernet Franc" },
+            { question: "Which grape variety is considered the pinnacle for high-quality Icewine due to its ability to retain searing acidity?", options: ["Vidal Blanc", "Riesling", "Chardonnay", "Pinot Gris"], answer: "Riesling", explanation: "Riesling is often considered the pinnacle variety for Icewine, as its naturally high acidity provides a superior counterbalance to the intense sweetness, creating wines of greater complexity and aging potential.", subjectType: "grape", subjectName: "Riesling" },
+            { question: "What is British Columbia's most planted red grape variety, which thrives in the heat of the South Okanagan?", options: ["Pinot Noir", "Syrah", "Merlot", "Cabernet Franc"], answer: "Merlot", explanation: "Merlot is British Columbia's most planted red variety, finding its ideal home in the heat and sun of the South Okanagan to produce rich, powerful, full-bodied red wines.", subjectType: "grape", subjectName: "Merlot" },
+            { question: "Which famously fickle grape excels in the cooler pockets of the Central and North Okanagan, as well as on Vancouver Island?", options: ["Syrah", "Pinot Noir", "Cabernet Sauvignon", "Malbec"], answer: "Pinot Noir", explanation: "Pinot Noir excels in the more moderate, cooler pockets of the Central and North Okanagan (like the Naramata Bench) and on Vancouver Island, producing wines of elegance and complexity.", subjectType: "grape", subjectName: "Pinot Noir" },
+            { question: "The use of Dijon clones like 115, 667, and 777 is a key strategy for which grape variety in British Columbia?", options: ["Chardonnay", "Merlot", "Syrah", "Pinot Noir"], answer: "Pinot Noir", explanation: "BC growers have planted a diverse portfolio of Pinot Noir clones, including several Dijon clones (115, 667, 777), to build complexity and buffer against vintage variation.", subjectType: "grape", subjectName: "Pinot Noir" },
+            { question: "Which grape variety is a rising star in the hottest, most arid sites of the South Okanagan and Similkameen Valley, known for peppery, savoury notes?", options: ["Gamay", "Syrah", "Pinot Meunier", "Zinfandel"], answer: "Syrah", explanation: "Syrah is a rising star demonstrating exceptional potential in the hottest, most arid sites of the South Okanagan and Similkameen Valley, producing powerful, savoury wines.", subjectType: "grape", subjectName: "Syrah" },
+            { question: "Which hardy, aromatic white grape is a key component of Nova Scotia's signature 'Tidal Bay' blend?", options: ["Chardonnay", "Sauvignon Blanc", "L'Acadie Blanc", "Riesling"], answer: "L'Acadie Blanc", explanation: "L'Acadie Blanc is a signature grape of Nova Scotia and a required component of the Tidal Bay appellation wine, known for its high acidity and aromatic profile.", subjectType: "grape", subjectName: "L'Acadie Blanc" },
+            { question: "The Frontenac family of grapes (Noir, Blanc, Gris) are Minnesota-developed hybrids crucial to which province's industry?", options: ["Ontario", "British Columbia", "Quebec", "Nova Scotia"], answer: "Quebec", explanation: "Quebec's vineyards are dominated by cold-hardy hybrids, with the Frontenac family of grapes being among the most planted and important varieties.", subjectType: "grape", subjectName: "Frontenac" },
+            { question: "What is the dominant vine training system used in British Columbia to maximize sun exposure?", options: ["Gobelet", "Pendelbogen", "Vertical Shoot Positioning (VSP)", "Four-Cane Kniffin"], answer: "Vertical Shoot Positioning (VSP)", explanation: "Vertical Shoot Positioning (VSP) is the dominant training system in British Columbia. Its open canopy structure provides excellent sun exposure, which is crucial for achieving ripeness." },
+            { question: "Vidal Blanc is a hybrid cross of Ugni Blanc and which other grape?", options: ["Chambourcin", "Rayon d'Or", "Seyval Blanc", "Baco Noir"], answer: "Rayon d'Or", explanation: "Vidal Blanc is a French hybrid grape, a cross of the Vitis vinifera grape Ugni Blanc and the hybrid Rayon d'Or." },
+            { question: "Which aromatic white grape, popular on Vancouver Island and the Fraser Valley, is known for its floral and lychee notes?", options: ["Ortega", "Bacchus", "Siegerrebe", "All of the above"], answer: "All of the above", explanation: "The cool, maritime climates of Vancouver Island and the Fraser Valley are ideal for early-ripening, aromatic German varieties like Ortega, Bacchus, and Siegerrebe." },
+            { question: "The 'Weis 21B' clone, widely planted in Ontario, is a selection of which grape variety from Germany's Mosel valley?", options: ["Pinot Blanc", "Müller-Thurgau", "Riesling", "Gewürztraminer"], answer: "Riesling", explanation: "The most widely planted Riesling clone in Ontario is Weis 21B, which originated in the Mosel and is known for producing racy, mineral-driven wines." },
+            { question: "Which red hybrid grape is known for producing smoky, gamy, and deeply coloured wines in Ontario, championed by producers like Henry of Pelham?", options: ["Maréchal Foch", "Baco Noir", "Lucie Kuhlmann", "Frontenac Noir"], answer: "Baco Noir", explanation: "Baco Noir is a key red hybrid in Ontario, permitted under VQA, and is known for producing deeply coloured wines with red fruit, smoke, and game notes." },
+            { question: "Which Blattner-developed red hybrid is gaining popularity in the cool, damp Fraser Valley?", options: ["Cabernet Foch", "Regent", "Rondo", "Pinotin"], answer: "Cabernet Foch", explanation: "The damp climate of the Fraser Valley favours disease-resistant hybrids like Cabernet Foch, developed by Valentin Blattner." },
+            { question: "What is the primary red grape used for making red Icewine?", options: ["Pinot Noir", "Merlot", "Cabernet Franc", "Gamay"], answer: "Cabernet Franc", explanation: "Cabernet Franc is the primary variety used for producing red Icewine, which offers notes of strawberry and rhubarb alongside its characteristic sweetness." },
+            { question: "What is 'Regulated Deficit Irrigation' (RDI), a technique used in BC?", options: ["A method of flood irrigation", "A technique of withholding water at key times to stress the vine", "A law limiting water usage", "A type of sprinkler system"], answer: "A technique of withholding water at key times to stress the vine", explanation: "RDI is a sophisticated technique where water is strategically withheld to induce controlled stress, encouraging the vine to focus energy on ripening fruit, leading to smaller, more concentrated berries." },
+            { question: "Which two Bordeaux varieties were hardest hit by the 2023 winter freeze in BC?", options: ["Cabernet Franc and Petit Verdot", "Merlot and Syrah", "Malbec and Carmenere", "Cabernet Sauvignon and Merlot"], answer: "Merlot and Syrah", explanation: "The 2023 winter freeze revealed the cold sensitivity of certain varieties, with Merlot and Syrah being among the hardest hit, suffering 66% and 72% crop loss respectively." },
+            { question: "The Pommard clone is a heritage selection of which grape variety?", options: ["Chardonnay", "Pinot Noir", "Gamay", "Cabernet Franc"], answer: "Pinot Noir", explanation: "The Pommard (91) clone is a well-regarded heritage clone of Pinot Noir, widely planted in British Columbia alongside the Dijon clones." },
+            { question: "What is the primary advantage of the VSP training system in a cool climate like Canada?", options: ["It protects from frost", "It provides excellent sun exposure to the fruit clusters", "It is the easiest to prune", "It allows for mechanical harvesting"], answer: "It provides excellent sun exposure to the fruit clusters", explanation: "Vertical Shoot Positioning's open canopy structure is crucial for maximizing sun exposure to ripen grapes in Canada's northerly latitude and shorter growing season." },
+        ]
+    },
+    lawmaker: {
+        title: "The Lawmaker's Desk",
+        instructions: "Answer 10 multiple-choice questions about Canada's VQA appellation laws and winemaking regulations.",
+        bank: [
+            { question: "What is the minimum percentage of Ontario-grown grapes required for a wine to be labeled 'VQA Ontario'?", options: ["85%", "95%", "100%", "75%"], answer: "100%", explanation: "The VQA seal on a bottle is a guarantee of 100% local grape origin. A wine labeled 'VQA Ontario' must be made from 100% Ontario-grown grapes." },
+            { question: "What is the minimum harvest temperature for grapes destined for Icewine in both Ontario and BC?", options: ["-5°C", "-8°C", "-10°C", "-12°C"], answer: "-8°C", explanation: "By law, grapes for Icewine must be naturally frozen on the vine and harvested and pressed while the ambient air temperature is -8°C or colder." },
+            { question: "In Ontario, what is the grape sourcing requirement for a wine labeled with a sub-appellation like 'Beamsville Bench'?", options: ["85% from the sub-appellation", "95% from the sub-appellation", "100% from the sub-appellation", "85% from the larger DVA"], answer: "100% from the sub-appellation", explanation: "In Ontario, a wine labeled with a sub-appellation must be made from 100% grapes grown within that specific area, a stricter rule than in BC." },
+            { question: "What is the minimum sugar level (in Brix) required for Icewine must in Ontario?", options: ["30° Brix", "32° Brix", "35° Brix", "40° Brix"], answer: "35° Brix", explanation: "The highly concentrated juice for Ontario Icewine must reach a minimum average sugar level of 35° Brix." },
+            { question: "What is the official VQA Ontario term for wines made in the 'Appassimento' style?", options: ["Select Late Harvest", "Vin de Paille", "Vin de Curé", "Noble Rot"], answer: "Vin de Curé", explanation: "'Vin de Curé' is the official VQA Ontario term for wines made using the Appassimento technique of drying grapes to concentrate sugars and flavours." },
+            { question: "The 'Wines of Marked Quality Regulation' (2005) gave legal authority to the VQA system in which province?", options: ["Ontario", "Quebec", "Nova Scotia", "British Columbia"], answer: "British Columbia", explanation: "In British Columbia, the 'Wines of Marked Quality Regulation' was brought into force in 2005, creating the BC Wine Authority to oversee and enforce the BC VQA standards." },
+            { question: "What is the name of Quebec's quality assurance system, established in 2018?", options: ["VQA Québec", "Appellation d'Origine Contrôlée (AOC)", "Indication Géographique Protégée (IGP) Vin du Québec", "Québec Qualité"], answer: "Indication Géographique Protégée (IGP) Vin du Québec", explanation: "Quebec established its own quality system, the Indication Géographique Protégée (IGP) Vin du Québec, in 2018 to guarantee traceability and quality standards." },
+            { question: "What is the maximum permitted alcohol level for a wine to be designated as 'Tidal Bay' in Nova Scotia?", options: ["10%", "11%", "12.5%", "13%"], answer: "11%", explanation: "Nova Scotia's Tidal Bay appellation defines a style, which includes a maximum alcohol level of 11% to ensure the wine remains crisp and refreshing." },
+            { question: "What is the controversial 'International-Canadian Blend' designation (formerly 'Cellared in Canada')?", options: ["A blend of wines from Ontario and BC", "A wine made from 100% imported grapes but bottled in Canada", "A wine that can be made with a high percentage of imported juice or concentrate", "A quality seal for wines intended for export"], answer: "A wine that can be made with a high percentage of imported juice or concentrate", explanation: "The 'International-Canadian Blend' is a low-tier category, falling outside the VQA system, that allows producers to use a significant amount of inexpensive imported juice or concentrate in wines labeled as 'Canadian'." },
+            { question: "Which was the first sub-GI to be established in British Columbia in 2015?", options: ["Naramata Bench", "Okanagan Falls", "Golden Mile Bench", "Skaha Bench"], answer: "Golden Mile Bench", explanation: "British Columbia established its first sub-GI, the Golden Mile Bench, in 2015, marking a significant step in codifying its specific terroirs." },
+            { question: "In BC, what is the grape sourcing requirement for a wine labeled with a sub-GI like 'Naramata Bench'?", options: ["85%", "95%", "100%", "90%"], answer: "95%", explanation: "In British Columbia, the rule for a sub-GI wine is slightly more lenient than Ontario's, requiring 95% of the grapes to come from the named sub-GI." },
+            { question: "What is the minimum percentage of a stated grape variety required for a single-varietal VQA wine?", options: ["75%", "85%", "95%", "100%"], answer: "85%", explanation: "For a VQA wine to be labeled with a single grape variety (e.g., 'Riesling'), it must contain at least 85% of that variety in both Ontario and BC." },
+            { question: "Which Vitis species is explicitly prohibited for use in BC VQA wines?", options: ["Vitis vinifera", "Vitis riparia", "Vitis labrusca", "Vitis amurensis"], answer: "Vitis labrusca", explanation: "The BC VQA regulations explicitly prohibit the use of Vitis labrusca varieties (like Concord) to ensure a focus on vinifera-style quality." },
+            { question: "VQA Ontario has a legal hierarchy for sweet wines (Late Harvest, Select Late Harvest, etc.) based on what metric?", options: ["Residual sugar in the final wine", "Harvest date", "Sugar level (Brix) of the grapes at harvest", "Minimum aging time"], answer: "Sugar level (Brix) of the grapes at harvest", explanation: "VQA Ontario's hierarchy for sweet wines is defined by the minimum Brix (sugar level) of the grapes at harvest, indicating the potential concentration of the wine." },
+            { question: "Which was the first sub-GI to be established outside of the Okanagan Valley?", options: ["Fraser Valley", "Cowichan Valley", "Similkameen Valley", "Gulf Islands"], answer: "Cowichan Valley", explanation: "The Cowichan Valley on Vancouver Island became the first sub-GI established outside of the Okanagan Valley in 2020." },
+            { question: "What is the minimum Brix for a VQA Ontario 'Select Late Harvest' wine?", options: ["22° Brix", "26° Brix", "30° Brix", "35° Brix"], answer: "26° Brix", explanation: "The VQA Ontario hierarchy for sweet wines requires a minimum of 22° Brix for Late Harvest, 26° Brix for Select Late Harvest, and 30° Brix for Special Select Late Harvest." },
+            { question: "In BC, what is the minimum residual sugar for a finished Icewine?", options: ["80 g/L", "100 g/L", "120 g/L", "There is no minimum"], answer: "100 g/L", explanation: "In British Columbia, a finished wine labeled as Icewine must contain a minimum of 100 grams per litre of residual sugar." },
+            { question: "Is chaptalization permitted for Icewine production?", options: ["Yes, up to 2%", "Only in cool vintages", "No, it is strictly forbidden", "Yes, but only in Ontario"], answer: "No, it is strictly forbidden", explanation: "Chaptalization (the addition of sugar) is strictly forbidden for Icewine. All sugar in the final wine must be derived from the natural sugar of the grapes." },
+            { question: "What does DVA stand for in Ontario's appellation system?", options: ["Designated Vineyard Area", "Defined Viticultural Appellation", "Designated Viticultural Area", "Dominion Vintners Alliance"], answer: "Designated Viticultural Area", explanation: "DVA stands for Designated Viticultural Area, the official term for Ontario's primary appellations like Niagara Peninsula." },
+            { question: "What is 'Meritage'?", options: ["A single-varietal Merlot", "A registered trademark for Bordeaux-style blends", "A type of sparkling wine", "A category of rosé wine"], answer: "A registered trademark for Bordeaux-style blends", explanation: "Meritage is a registered trademark for high-quality red or white wines made from a blend of the traditional Bordeaux grape varieties." },
+        ]
+    },
+    gastronome: {
+        title: "The Gastronome's Table",
+        instructions: "Answer 10 multiple-choice questions about Canada's iconic dishes, local ingredients, and classic food & wine pairings.",
+        bank: [
+            { question: "What quintessential Québécois dish of french fries, cheese curds, and gravy pairs well with a high-acid sparkling wine?", options: ["Tourtière", "Poutine", "Bannock", "Butter Tart"], answer: "Poutine", explanation: "The richness and saltiness of Poutine pairs remarkably well with a high-acid, palate-cleansing traditional method sparkling wine or a juicy, low-tannin red like Gamay.", subjectType: "dish", subjectName: "Poutine" },
+            { question: "What is the classic wine pairing for wild BC salmon?", options: ["Okanagan Cabernet Sauvignon", "Niagara Riesling", "Okanagan Pinot Noir", "Nova Scotia Tidal Bay"], answer: "Okanagan Pinot Noir", explanation: "The classic pairing for wild BC salmon is a high-quality Okanagan Pinot Noir; the wine's bright acidity and red fruit notes complement the rich, oily fish without overpowering it.", subjectType: "wine_pairing", subjectName: "Wild BC Salmon and Okanagan Pinot Noir" },
+            { question: "Which iconic Canadian cocktail is defined by its use of Clamato juice?", options: ["Screech & Coke", "Maple Old Fashioned", "The Bloody Caesar", "The Toronto"], answer: "The Bloody Caesar", explanation: "Widely considered Canada's national cocktail, the Caesar's defining ingredient is Clamato juice, a blend of tomato juice and clam broth, giving it a distinct savoury character.", subjectType: "spirit", subjectName: "The Bloody Caesar Cocktail" },
+            { question: "What classic Canadian dessert of a flaky pastry filled with a butter and sugar custard pairs well with a Late Harvest Vidal?", options: ["Nanaimo Bar", "Beaver Tail", "Butter Tart", "Flapper Pie"], answer: "Butter Tart", explanation: "The sweet Butter Tart is a natural partner for a luscious Late Harvest Vidal or Riesling, whose sweetness complements the tart while its acidity prevents the pairing from becoming cloying.", subjectType: "dish", subjectName: "Butter Tart" },
+            { question: "Peameal bacon, an Ontario specialty, is unsmoked back bacon rolled in what?", options: ["Cracked black pepper", "Flour", "Cornmeal", "Breadcrumbs"], answer: "Cornmeal", explanation: "Peameal bacon is an Ontario specialty of unsmoked back bacon that has been cured in brine and rolled in cornmeal, giving it a distinctive yellow crust.", subjectType: "ingredient", subjectName: "Peameal Bacon" },
+            { question: "What is Tourtière, a traditional holiday dish from Quebec?", options: ["A sweet fruit pie", "A seafood stew", "A savoury, spiced meat pie", "A layered cheese and potato casserole"], answer: "A savoury, spiced meat pie", explanation: "Tourtière is a savoury, spiced meat pie, traditionally from Quebec, often served during the holidays. It pairs well with an earthy, medium-bodied red like Pinot Noir or Cabernet Franc.", subjectType: "dish", subjectName: "Tourtière" },
+            { question: "Dungeness crab and other coastal shellfish from British Columbia are best paired with what style of wine?", options: ["A big, oaky Chardonnay", "A powerful, tannic Cabernet Sauvignon", "A crisp, unoaked white like Pinot Gris", "A sweet Icewine"], answer: "A crisp, unoaked white like Pinot Gris", explanation: "The sweet, delicate meat of Dungeness crab and other BC shellfish is best paired with a crisp, unoaked white wine like a BC Pinot Gris or Sauvignon Blanc.", subjectType: "wine_pairing", subjectName: "BC Shellfish and Pinot Gris" },
+            { question: "What is 'Screech,' a beverage famously associated with Newfoundland?", options: ["A type of local beer", "A type of rum", "A maple-flavoured liqueur", "An unaged whisky"], answer: "A type of rum", explanation: "Screech is a type of Newfoundland rum, famous for its central role in 'screech-in' ceremonies, a cultural initiation for visitors to the province.", subjectType: "spirit", subjectName: "Newfoundland Screech Rum" },
+            { question: "Bannock, a versatile griddled bread, has its origins with which group?", options: ["French settlers", "Scottish immigrants", "Indigenous peoples", "Ukrainian pioneers"], answer: "Indigenous peoples", explanation: "Bannock is a simple, versatile bread with Indigenous origins, now found in both traditional and modern culinary settings across Canada.", subjectType: "dish", subjectName: "Bannock" },
+            { question: "Canada's most significant spirit on the global stage is colloquially known by what name?", options: ["Whisky", "Rye", "Bourbon", "Gin"], answer: "Rye", explanation: "Canadian Whisky, historically and colloquially known as 'Rye,' is Canada's most significant spirit. It is typically a blended whisky known for being lighter and smoother than American counterparts.", subjectType: "spirit", subjectName: "Canadian Rye Whisky" },
+            { question: "An off-dry Riesling is an excellent match for maple-glazed peameal bacon due to which pairing principle?", options: ["Complementing sweetness and contrasting acidity", "Matching tannins with fat", "Contrasting flavours", "Matching textures"], answer: "Complementing sweetness and contrasting acidity", explanation: "The wine's residual sugar complements the maple glaze, while its bright acidity cuts through the richness of the pork, creating a balanced pairing." },
+            { question: "The Okanagan Valley is famous for which agricultural products besides grapes?", options: ["Grains and pulses", "Dairy and beef", "Tree fruits like cherries and peaches", "Root vegetables"], answer: "Tree fruits like cherries and peaches", explanation: "The Okanagan Valley is famous for its orchards, and local tree fruits like cherries, peaches, and apples are integral to the regional cuisine." },
+            { question: "What is the key difference between a Bloody Mary and a Bloody Caesar?", options: ["The type of vodka used", "The use of Clamato juice instead of tomato juice", "The type of hot sauce used", "The garnish"], answer: "The use of Clamato juice instead of tomato juice", explanation: "The defining ingredient that separates a Caesar from a Bloody Mary is Clamato juice, a blend of tomato and clam broth." },
+            { question: "Hard cider has a long history in which two Canadian provinces?", options: ["British Columbia and Ontario", "Quebec and Nova Scotia", "Alberta and Saskatchewan", "Manitoba and Ontario"], answer: "Quebec and Nova Scotia", explanation: "With a long history in the apple-growing regions of Eastern Canada, cider is a traditional beverage in Quebec and Nova Scotia." },
+            { question: "Coureur des Bois is a popular brand of what type of beverage from Quebec?", options: ["Craft beer", "Rye whisky", "Maple liqueur", "Apple brandy"], answer: "Maple liqueur", explanation: "Coureur des Bois is a popular maple liqueur from Quebec, capturing the nation's iconic flavour in a sweet spirit." },
+        ]
+    },
+    critic: {
+        title: "The Critic's Corner",
+        instructions: "Answer 10 multiple-choice questions about Canada's benchmark producers, iconic wines, and vintage characteristics.",
+        bank: [
+            { question: "Which winery's 1989 Vidal Icewine won the Grand Prix d'Honneur at Vinexpo in 1991, putting Canadian wine on the global map?", options: ["Mission Hill", "Cave Spring", "Inniskillin", "Tawse"], answer: "Inniskillin", explanation: "The victory of Inniskillin's 1989 Vidal Icewine at Vinexpo in 1991 was a watershed moment that single-handedly established Canada's reputation for quality wine.", subjectType: "producer", subjectName: "Inniskillin" },
+            { question: "Which British Columbia winery, under proprietor Anthony von Mandl, won 'Best Chardonnay' at a major international competition in 1994?", options: ["Poplar Grove", "Mission Hill Family Estate", "CheckMate", "Quails' Gate"], answer: "Mission Hill Family Estate", explanation: "Mission Hill Family Estate's 1992 Chardonnay won the IWSC award for 'Best Chardonnay' in 1994, bringing unprecedented international recognition to the Okanagan Valley.", subjectType: "producer", subjectName: "Mission Hill Family Estate" },
+            { question: "Osoyoos Larose is a high-profile joint venture between a Canadian company and an esteemed wine group from which French region?", options: ["Burgundy", "Loire Valley", "Rhône Valley", "Bordeaux"], answer: "Bordeaux", explanation: "Osoyoos Larose was established in 1998 as a joint venture between Canada's Vincor and the esteemed Groupe Taillan of Bordeaux to create a Bordeaux-style 'Grand Vin' icon.", subjectType: "wine", subjectName: "Osoyoos Larose Le Grand Vin" },
+            { question: "How is the 2020 vintage generally characterized for both the Okanagan and Niagara?", options: ["Cool and challenging", "Classic and balanced", "Hot and ripe", "Catastrophic due to frost"], answer: "Hot and ripe", explanation: "2020 was a benchmark hot, dry year for both regions. BC produced concentrated, powerful reds, and Niagara saw exceptional ripeness and quality across the board.", subjectType: "vintage", subjectName: "2020 Canadian Vintage" },
+            { question: "Which catastrophic event defined the 2024 vintage in the Okanagan Valley?", options: ["Widespread wildfires", "A severe deep freeze", "A massive flood", "A severe drought"], answer: "A severe deep freeze", explanation: "Following a severe deep freeze in January 2024, the crop loss in the Okanagan was projected to be between 97-99%, effectively a complete wipeout for the vintage.", subjectType: "vintage", subjectName: "2024 Okanagan Valley Vintage" },
+            { question: "Which Niagara winery is a certified organic and biodynamic leader on the Beamsville Bench, known for terroir-expressive wines?", options: ["Stratus Vineyards", "Henry of Pelham", "Tawse Winery", "Cave Spring Cellars"], answer: "Tawse Winery", explanation: "Tawse Winery is a certified organic and biodynamic leader on the Beamsville Bench, known for benchmark, mineral-driven wines like their single-vineyard Cabernet Francs and Pinot Noirs.", subjectType: "producer", subjectName: "Tawse Winery" },
+            { question: "The 'Oculus' Bordeaux-style blend is the flagship icon wine of which producer?", options: ["Osoyoos Larose", "Poplar Grove", "Mission Hill Family Estate", "Stratus Vineyards"], answer: "Mission Hill Family Estate", explanation: "Oculus is the iconic Bordeaux-style blend from Mission Hill Family Estate, a benchmark for quality in the Okanagan Valley.", subjectType: "wine", subjectName: "Mission Hill Oculus" },
+            { question: "Which 'Value Champion' winery from the Short Hills Bench is particularly known for producing the benchmark Baco Noir?", options: ["Featherstone Estate Winery", "Henry of Pelham Family Estate", "Cave Spring Cellars", "Tawse Winery"], answer: "Henry of Pelham Family Estate", explanation: "Henry of Pelham, a pioneer of the Short Hills Bench, is particularly known for producing the benchmark, value-driven Baco Noir.", subjectType: "producer", subjectName: "Henry of Pelham Family Estate" },
+            { question: "How are cool and challenging vintages, such as 2011 and 2019, generally characterized in Canada?", options: ["Powerful, high-alcohol wines", "Perfectly balanced, age-worthy wines", "Lighter-bodied, higher-acid wines", "No wine produced"], answer: "Lighter-bodied, higher-acid wines", explanation: "Cool and challenging vintages are marked by cooler temperatures and/or rain, leading to lighter-bodied, higher-acid wines where quality is highly dependent on producer skill." },
+            { question: "Which winery is a specialist in high-end, single-vineyard Chardonnay and Merlot, with cuvées named after chess moves like 'Queen Taken'?", options: ["Mission Hill", "CheckMate Artisanal Winery", "Poplar Grove", "Solvero Wines"], answer: "CheckMate Artisanal Winery", explanation: "CheckMate Artisanal Winery is a specialist producer in the Okanagan focusing on high-end Chardonnay and Merlot from single vineyards, with wines named with chess terminology.", subjectType: "producer", subjectName: "CheckMate Artisanal Winery" },
+            { question: "The 2016 vintage in the Okanagan is considered a 'classic' vintage for what reason?", options: ["It was the hottest year on record", "A cool summer preserved acidity, leading to wines of finesse", "It produced the largest crop ever", "It was ideal for Icewine"], answer: "A cool summer preserved acidity, leading to wines of finesse", explanation: "After several hot years, 2016 in BC was a return to a classic, cooler vintage. A cool June and July slowed ripening, preserving acidity and leading to wines of finesse and intensity." },
+            { question: "Which Niagara winery is a leader in sustainable viticulture and complex, layered blends from Niagara-on-the-Lake?", options: ["Tawse Winery", "Stratus Vineyards", "Cave Spring Cellars", "Henry of Pelham"], answer: "Stratus Vineyards", explanation: "Stratus Vineyards is a leader in sustainable viticulture, known for its complex, layered, and age-worthy Bordeaux-style blends, Stratus Red and Stratus White.", subjectType: "producer", subjectName: "Stratus Vineyards" },
+            { question: "The 2023 vintage in the Okanagan was severely impacted by a winter deep freeze and what other major climatic issue?", options: ["Hailstorms", "Flooding", "Drought", "Wildfire smoke taint"], answer: "Wildfire smoke taint", explanation: "The 2023 vintage in BC was defined by both the preceding winter's deep freeze and summer wildfires that created widespread smoke taint concerns." },
+            { question: "Which winery is considered one of Ontario's original Riesling specialists, setting the benchmark for dry, age-worthy styles from the Beamsville Bench?", options: ["Tawse Winery", "Henry of Pelham", "Cave Spring Cellars", "Stratus Vineyards"], answer: "Cave Spring Cellars", explanation: "Cave Spring Cellars is one of Ontario's original Riesling specialists, and their top CSV (Cave Spring Vineyard) Riesling is a benchmark for dry, age-worthy Riesling." },
+            { question: "Which 'Rising Star' winery in the Okanagan is known for bottling individual Pinot Noir clones?", options: ["Solvero Wines", "Code Wines", "Meyer Family Vineyards", "Tantalus Vineyards"], answer: "Code Wines", explanation: "Code Wines is a small Okanagan Falls winery focused on exploring and bottling individual Pinot Noir clones, offering a unique insight into clonal variation." },
+        ]
+    },
+    flashcards: {
+        title: "Flashcard Study",
+        instructions: "First, select the topics you want to review. Then, click through the cards to study. Click on a card to flip it and see the answer.",
+        decks: {
+            historian: [
+                { front: "Who was Leif Eriksson?", back: "An Icelandic explorer who reached the east coast of Canada circa 1000 CE and named it 'Vinland' due to the presence of wild grapes." },
+                { front: "Who was Jacques Cartier?", back: "A French explorer who sailed up the St. Lawrence River in 1535 and named an island 'Île de Bacchus' for its wild grapevines." },
+                { front: "Who was Louis Hébert?", back: "A French apothecary who planted Canada's first documented vineyard in Nova Scotia in 1611." },
+                { front: "Who was Johann Schiller?", back: "A retired German corporal who established a vineyard in 1811 west of Toronto, domesticating local Vitis labrusca." },
+                { front: "What is Vin Villa?", back: "Canada's first commercial winery, established in 1866 on Pelee Island, Ontario." },
+                { front: "Who were Donald Ziraldo and Karl Kaiser?", back: "The founders of Inniskillin (1975), a pioneering Ontario winery that championed high-quality Vitis vinifera wines." },
+                { front: "Who was Harry McWatters?", back: "A key pioneer in British Columbia's modern wine industry, founder of Sumac Ridge, who also championed Vitis vinifera and estate wineries." },
+                { front: "Who was Father Charles Pandosy?", back: "A French Oblate priest who established the first non-native settlement and first vineyard in the Okanagan Valley in 1859." },
+                { front: "Who was Anthony von Mandl?", back: "The proprietor of Mission Hill Family Estate, whose ambition led to major international awards and raised the profile of the Okanagan Valley." },
+                { front: "Who was Walter Hainle?", back: "A German immigrant who produced Canada's first Icewine in British Columbia in 1978." },
+                { front: "What year was Canada's first commercial winery, Vin Villa, established?", back: "1866" },
+                { front: "What pivotal event in 1974 catalyzed the modern Canadian fine wine industry?", back: "The lifting of the nearly 50-year moratorium on new winery licenses." },
+                { front: "What was the 'Becker Project' of 1974?", back: "A federally funded trial in BC that tested German Vitis vinifera varieties, proving their viability." },
+                { front: "What were the three components of the '1988 Trifecta'?", back: "1. Canada-U.S. Free Trade Agreement (CUSFTA)\n2. The Grape Vine Replacement Program\n3. The establishment of the Vintners Quality Alliance (VQA)" },
+                { front: "What year was the Ontario VQA established?", back: "1988" },
+                { front: "What year was the BC VQA established?", back: "1990" },
+                { front: "What award did Inniskillin's 1989 Vidal Icewine win in 1991?", back: "The Grand Prix d’Honneur at Vinexpo in Bordeaux." },
+                { front: "When did the Ontario VQA gain legal authority through the VQA Act?", back: "The Act was passed in 1999 and proclaimed in 2000." },
+                { front: "When did the BC VQA gain legal authority?", back: "In 2005, with the 'Wines of Marked Quality Regulation'." },
+                { front: "What is the Laurel Packinghouse?", back: "BC's oldest and largest surviving fruit packinghouse, now home to the Okanagan Wine & Orchard Museum." }
+            ],
+            terroir: [
+                { front: "What is the primary parent rock below the Niagara Escarpment?", back: "Reddish, iron-rich Queenston Shale." },
+                { front: "What type of rock caps the Niagara Escarpment?", back: "Resistant Silurian dolostone and limestone." },
+                { front: "What is the origin of the soils on the Niagara Peninsula?", back: "Glacio-lacustrine deposits from the ancient Lake Iroquois." },
+                { front: "Describe the soils on the Niagara Escarpment benches.", back: "A complex mix of glacial till (loam, sand, gravel) with limestone and shale fragments, offering superior drainage." },
+                { front: "What is the geological bedrock of the Okanagan Valley?", back: "A complex mix of ancient metamorphic rock (Shuswap Complex) and Eocene-era volcanic rock." },
+                { front: "What are the dominant soils in the South Okanagan?", back: "Deep, coarse fluvio-glacial sands and gravels." },
+                { front: "What are the dominant soils in the Central and North Okanagan?", back: "Glacial till, silt, and clay-loam with greater water retention." },
+                { front: "What are the two key climate moderators for the Niagara Peninsula?", back: "Lake Ontario and the Niagara Escarpment." },
+                { front: "What are the two key climate moderators for the Okanagan Valley?", back: "The chain of deep lakes and the rain shadow effect of the Coast and Cascade Mountains." },
+                { front: "What is the single greatest viticultural risk in Canada?", back: "Extreme Winter Cold (Winter Kill)." },
+                { front: "What is smoke taint?", back: "A fault where volatile phenols from wildfire smoke are absorbed by grapes, leading to 'ashtray' notes in the wine." },
+                { front: "Which DVA is defined by shallow, stony soils over fractured limestone (Hillier clay loam)?", back: "Prince Edward County" },
+                { front: "Which BC GI is known as the 'organic capital' due to strong, disease-reducing winds?", back: "Similkameen Valley" },
+                { front: "Which body of water has the world's highest tides and moderates Nova Scotia's climate?", back: "The Bay of Fundy" },
+                { front: "Which Ontario DVA has the longest growing season?", back: "Lake Erie North Shore" },
+                { front: "What is the average GDD for the Niagara Peninsula?", back: "1400–1600 GDD" },
+                { front: "What is the average GDD for the South Okanagan?", back: "1450–1700+ GDD" },
+                { front: "What is the average annual precipitation in the South Okanagan?", back: "Approx. 300–400 mm, making it a desert climate." },
+                { front: "What is the average annual precipitation in the Niagara Peninsula?", back: "Approx. 850–950 mm." },
+                { front: "What is the primary viticultural risk of Spring Frost?", back: "An early budburst encouraged by the 'lake effect' can be wiped out by a late frost, destroying the nascent crop." },
+                { front: "What is the primary soil type of the Haldimand Clay Plain in Niagara?", back: "Heavy, deep, and often poorly-drained silty clay and clay loam." },
+                { front: "What is the Shuswap Complex?", back: "The Precambrian metamorphic rock that forms part of the Okanagan's complex geology." },
+                { front: "What was Glacial Lake Penticton?", back: "A massive post-ice age lake whose deposits were reworked by rivers to form the soils of the Okanagan Valley." },
+                { front: "What is the elevation range for vineyards in the Okanagan Valley?", back: "Significantly higher than Niagara, typically ranging from 300 to 620 metres." },
+                { front: "What is the elevation range for vineyards on the Niagara Peninsula?", back: "Modest, from approx. 75 metres on the lakeshore plain to over 177 metres on the benches." },
+                { front: "What is the primary climatic influence in the Fraser Valley GI?", back: "A mild maritime climate from the Pacific Ocean, resulting in high rainfall and humidity." },
+                { front: "Which Ontario sub-appellation sits ON TOP of the Niagara Escarpment?", back: "Vinemount Ridge" },
+                { front: "Which Niagara sub-appellation is the largest by area?", back: "Four Mile Creek" },
+                { front: "Which Niagara sub-appellation has 90% of the region's rare south- and southeast-facing slopes?", back: "Short Hills Bench" },
+                { front: "What is the name of the sub-GI on Vancouver Island?", back: "Cowichan Valley" },
+                { front: "What is the northernmost sub-GI in the Okanagan Valley?", back: "Lake Country" },
+                { front: "Which sub-GI was the very first to be established in British Columbia?", back: "Golden Mile Bench (2015)" },
+                { front: "The Similkameen Valley's soils are notably rich in what mineral?", back: "Calcium Carbonate" },
+                { front: "The Kootenays GI is moderated by what large body of water?", back: "Kootenay Lake" },
+                { front: "The Thompson Valley GI is semi-arid and has large diurnal swings. What does this promote in the grapes?", back: "High acidity" },
+                { front: "What is the primary soil type in the Thompson Valley GI?", back: "Glaciolacustrine (clay, silt, sand) over limestone and volcanic rock." },
+                { front: "What river moderates the climate in the Lillooet GI?", back: "The Fraser River" },
+                { front: "What is the primary climatic challenge in the Gulf Islands GI?", back: "Water scarcity during the summer." },
+                { front: "Which Ontario regional appellation is known for its mineral-driven wines from limestone-influenced soils?", back: "Niagara Escarpment" },
+                { front: "Which Ontario regional appellation is warmer and renowned for red Bordeaux varieties?", back: "Niagara-on-the-Lake" },
+                { front: "What is the primary reason vines must be buried in Quebec for winter?", back: "To protect them from extremely cold temperatures that can fall below -30°C." },
+                { front: "The Annapolis Valley and Gaspereau Valley are the two most important districts in which province?", back: "Nova Scotia" },
+                { front: "What is the effect of the steep, rocky valley walls in the Similkameen?", back: "They absorb and reflect heat, maintaining warmth even after the sun sets." },
+                { front: "What is the 'rain shadow effect'?", back: "A dry area on the leeward side of a mountainous area. The mountains block the passage of rain-producing weather systems." },
+                { front: "What is a 'cuesta'?", back: "A ridge with a gentle slope on one side and a steep slope on the other, like the Niagara Escarpment." },
+            ],
+            ampelographer: [
+                { front: "What is Ontario's signature white grape?", back: "Riesling" },
+                { front: "What is the most widely planted Riesling clone in Ontario?", back: "Weis 21B from the Mosel." },
+                { front: "What is Ontario's most important and reliable red grape?", back: "Cabernet Franc" },
+                { front: "What is the workhorse grape for Ontario Icewine?", back: "Vidal Blanc (French Hybrid)" },
+                { front: "What is BC's most planted red grape?", back: "Merlot" },
+                { front: "What grape excels in the cooler parts of the Okanagan and on Vancouver Island?", back: "Pinot Noir" },
+                { front: "Name three Dijon clones of Pinot Noir grown in BC.", back: "115, 667, and 777" },
+                { front: "What grape is a rising star in the hot, arid Similkameen Valley?", back: "Syrah" },
+                { front: "What is the dominant vine training system in BC?", back: "Vertical Shoot Positioning (VSP)" },
+                { front: "Is irrigation essential in the South Okanagan?", back: "Yes, it is a viticultural necessity." },
+                { front: "What is the signature white grape of Nova Scotia?", back: "L'Acadie Blanc" },
+                { front: "What family of cold-hardy hybrids is essential to Quebec's wine industry?", back: "Frontenac (Noir, Blanc, Gris)" },
+                { front: "What is Baco Noir?", back: "A key red hybrid grape in Ontario, known for smoky and gamy notes." },
+                { front: "What are Ortega and Siegerrebe?", back: "Aromatic German white varieties that thrive in the cool, maritime climates of Vancouver Island and the Fraser Valley." },
+                { front: "What is the genetic cross of Vidal Blanc?", back: "Ugni Blanc (V. vinifera) x Rayon d'Or (Hybrid)" },
+                { front: "What is the primary red grape used for red Icewine?", back: "Cabernet Franc" },
+                { front: "What is the Pommard clone?", back: "A heritage clone of Pinot Noir, known for structure and earthiness, widely planted in BC." },
+                { front: "What is Maréchal Foch?", back: "A cold-hardy red hybrid grape important in Quebec, Nova Scotia, and some cooler BC regions like Shuswap." },
+                { front: "What is the primary advantage of Cabernet Franc over Cabernet Sauvignon in Ontario?", back: "Superior winter hardiness and the ability to ripen more consistently in a shorter growing season." },
+                { front: "What is Regulated Deficit Irrigation (RDI)?", back: "A technique used in arid regions like the Okanagan where water is strategically withheld to stress the vine, leading to smaller, more concentrated berries." },
+                { front: "What is the primary viticultural characteristic of Vidal Blanc that makes it ideal for Icewine?", back: "Extreme winter hardiness and thick skins that resist bunch rot." },
+                { front: "What is the typical flavour profile of Ontario Cabernet Franc?", back: "Raspberry, tobacco leaf, and bell pepper, with bright acidity." },
+                { front: "What is the typical flavour profile of South Okanagan Syrah?", back: "Powerful and savoury, with notes of black fruit, black pepper, and cured meat." },
+                { front: "Which two Vitis species are in the genetic lineage of Vidal Blanc?", back: "*Vitis rupestris* and *Vitis aestivalis* (from its hybrid parent)." },
+                { front: "What is a common traditional vine training system in Ontario?", back: "Four- or Six-Cane Kniffin or Pendelbogen." },
+                { front: "What is a divided canopy system used in BC for vigorous sites?", back: "Scott Henry" },
+                { front: "What is Gobelet training?", back: "An ancient head-trained, spur-pruned system, sometimes used experimentally in BC for Rhône varieties." },
+                { front: "Which variety was the hardest hit by the 2023 winter freeze in BC?", back: "Syrah (72% crop loss)." },
+                { front: "What is the target yield for quality-focused growers in BC?", back: "Low yields of 2 to 4 tons per acre." },
+                { front: "What is L'Acadie Blanc a hybrid of?", back: "Cascade and Seyve-Villard 14-287." },
+                { front: "Which grape is sometimes called 'Nova Scotia's Chardonnay'?", back: "L'Acadie Blanc" },
+                { front: "What is Seyval Blanc?", back: "A key French hybrid white grape, important in Quebec and Nova Scotia, and a permitted component of Tidal Bay." },
+                { front: "What is Marquette?", back: "A cold-hardy red hybrid from the University of Minnesota, important in Quebec and emerging regions like the Thompson Valley." },
+                { front: "What is Cabernet Foch?", back: "A disease-resistant red hybrid developed by Valentin Blattner, grown in the damp Fraser Valley." },
+                { front: "What is the primary difference between German Riesling clone Weis 21B and Alsace Clone 49?", back: "Weis 21B (Mosel) is known for being racy and mineral-driven, while Alsace 49 tends to be slightly richer and softer." },
+            ],
+            lawmaker: [
+                { front: "What does VQA stand for?", back: "Vintners Quality Alliance" },
+                { front: "What is the minimum grape origin for any VQA wine?", back: "100% grapes from the designated province (Ontario or BC)." },
+                { front: "What is the minimum harvest temperature for Icewine?", back: "-8°C or colder." },
+                { front: "What is the minimum must sugar level for Ontario Icewine?", back: "35° Brix" },
+                { front: "What is the grape sourcing rule for an Ontario sub-appellation wine?", back: "100% from the named sub-appellation." },
+                { front: "What is the grape sourcing rule for a BC sub-GI wine?", back: "95% from the named sub-GI." },
+                { front: "What is the official VQA Ontario term for Appassimento-style wines?", back: "Vin de Curé" },
+                { front: "What is Tidal Bay?", back: "Nova Scotia's signature appellation, defining a style: a crisp, aromatic, dry-ish white wine with a maximum of 11% ABV." },
+                { front: "What was BC's first sub-GI?", back: "Golden Mile Bench (established 2015)." },
+                { front: "What is the minimum percentage for a single-varietal VQA wine?", back: "85% of the stated variety." },
+                { front: "What is the name of Quebec's quality system?", back: "Indication Géographique Protégée (IGP) Vin du Québec" },
+                { front: "What is the controversial 'International-Canadian Blend'?", back: "A non-VQA wine that can be made with a high percentage of imported juice or concentrate." },
+                { front: "What does DVA stand for in Ontario's system?", back: "Designated Viticultural Area" },
+                { front: "What was the first sub-GI established outside the Okanagan Valley?", back: "Cowichan Valley (on Vancouver Island)." },
+                { front: "What is the minimum vintage content for a vintage-dated VQA wine?", back: "85% of grapes from the stated vintage year." },
+                { front: "What is the grape sourcing rule for an Ontario DVA wine (e.g., VQA Niagara Peninsula)?", back: "Minimum 85% from the named DVA." },
+                { front: "What is the grape sourcing rule for a BC GI wine (e.g., BC VQA Okanagan Valley)?", back: "Minimum 95% from the named GI." },
+                { front: "Which Vitis species is explicitly prohibited in BC VQA wines?", back: "Vitis labrusca (e.g., Concord)" },
+                { front: "Is chaptalization permitted for Icewine?", back: "No, it is strictly forbidden." },
+                { front: "What is the minimum residual sugar for a finished BC VQA Icewine?", back: "100 grams per litre." },
+                { front: "What is the minimum Brix for a VQA Ontario 'Late Harvest' wine?", back: "22° Brix" },
+                { front: "What is the minimum Brix for a VQA Ontario 'Select Late Harvest' wine?", back: "26° Brix" },
+                { front: "What is the minimum Brix for a VQA Ontario 'Special Select Late Harvest' wine?", back: "30° Brix" },
+                { front: "What is 'Meritage'?", back: "A registered trademark for a winery's top-tier Bordeaux-style blend." },
+                { front: "What is the minimum pressure for a VQA Ontario sparkling wine?", back: "300 kPa (3 bars)." },
+                { front: "What are the four required grape varieties that must make up at least 51% of a Tidal Bay blend?", back: "L’Acadie Blanc, Seyval Blanc, Vidal, and Geisenheim 318." },
+                { front: "What is a 'Wine of Distinction' in BC?", back: "A non-VQA tier for wines made from 100% BC grapes that meet basic standards but don't undergo the full VQA assessment." },
+                { front: "When was the Vintners Quality Alliance Act proclaimed in Ontario?", back: "June 29, 2000" },
+                { front: "When was the 'Wines of Marked Quality Regulation' enacted in BC?", back: "2005" },
+                { front: "Is artificial refrigeration permitted to make Icewine?", back: "No, grapes must be naturally frozen on the vine." },
+            ],
+            gastronome: [
+                { front: "What is Poutine?", back: "A Québécois dish of French fries, fresh cheese curds, and hot gravy." },
+                { front: "What is the classic wine pairing for wild BC salmon?", back: "Okanagan Pinot Noir" },
+                { front: "What is the defining ingredient of a Bloody Caesar cocktail?", back: "Clamato juice (a blend of tomato juice and clam broth)." },
+                { front: "What is a Tourtière?", back: "A savoury, spiced meat pie from Quebec." },
+                { front: "What is peameal bacon?", back: "An Ontario specialty of unsmoked back bacon cured in brine and rolled in cornmeal." },
+                { front: "What is the classic pairing for Poutine?", back: "A high-acid traditional method sparkling wine." },
+                { front: "What is the classic pairing for a Canadian Butter Tart?", back: "Late Harvest Vidal or Riesling." },
+                { front: "What is Screech?", back: "A type of rum associated with Newfoundland." },
+                { front: "What is Bannock?", back: "A simple, versatile griddled bread with Indigenous origins." },
+                { front: "What is the colloquial name for Canadian Whisky?", back: "Rye" },
+                { front: "What is the classic pairing for Dungeness crab from BC?", back: "A crisp, unoaked white wine like BC Pinot Gris or Sauvignon Blanc." },
+                { front: "What is the classic pairing for a hearty Tourtière?", back: "An earthy, medium-bodied red like Ontario Pinot Noir or Cabernet Franc." },
+                { front: "What is the classic pairing for maple-glazed peameal bacon?", back: "An off-dry Riesling." },
+                { front: "What are the key agricultural products of the Okanagan besides grapes?", back: "Tree fruits, especially cherries, peaches, and apples." },
+                { front: "What is Coureur des Bois?", back: "A popular brand of maple liqueur from Quebec." },
+                { front: "What is the garnish on a traditional Bloody Caesar?", back: "A celery salt rim and a celery stalk or other creative garnish." },
+                { front: "Which two provinces have a long history of hard cider production?", back: "Quebec and Nova Scotia." },
+                { front: "What is the general style of Canadian Rye Whisky compared to American counterparts?", back: "It is typically lighter and smoother." },
+                { front: "What is a 'screech-in' ceremony?", back: "A cultural initiation for visitors to Newfoundland involving a shot of Screech rum." },
+                { front: "Does Canada have a national protected food designation system like Europe's PDO/PGI?", back: "No, it does not." },
+            ],
+            critic: [
+                { front: "Which winery's Icewine won the Grand Prix d'Honneur at Vinexpo '91?", back: "Inniskillin" },
+                { front: "Which Okanagan winery is a joint venture with a Bordeaux group?", back: "Osoyoos Larose" },
+                { front: "Which Niagara winery is a leader in organic and biodynamic viticulture?", back: "Tawse Winery" },
+                { front: "What is the flagship Bordeaux blend from Mission Hill?", back: "Oculus" },
+                { front: "Describe the 2020 vintage in Canada.", back: "Excellent. A benchmark hot, dry year leading to ripe, powerful, and concentrated wines." },
+                { front: "Describe the 2016 vintage in the Okanagan.", back: "Excellent. A classic, cooler vintage that preserved acidity, leading to wines of finesse and intensity." },
+                { front: "What happened to the 2024 Okanagan vintage?", back: "It was almost entirely wiped out (97-99% crop loss) by a severe deep freeze in January 2024." },
+                { front: "Which producer is known as a benchmark for Baco Noir?", back: "Henry of Pelham Family Estate" },
+                { front: "Which BC winery specializes in high-end, single-vineyard Chardonnay and Merlot named after chess moves?", back: "CheckMate Artisanal Winery" },
+                { front: "Which Niagara winery is a leader in complex, sustainable blends from Niagara-on-the-Lake?", back: "Stratus Vineyards" },
+                { front: "Which winery is a benchmark for dry, age-worthy Riesling from the Beamsville Bench?", back: "Cave Spring Cellars" },
+                { front: "How are cool vintages like 2011 or 2019 characterized?", back: "Challenging. They produce lighter-bodied, higher-acid wines where quality is highly variable." },
+                { front: "What is the flagship wine of Osoyoos Larose?", back: "Le Grand Vin" },
+                { front: "Which winery, owned by Anthony von Mandl, won 'Best Chardonnay' in a 1994 international competition?", back: "Mission Hill Family Estate" },
+                { front: "Describe a 'Hot & Ripe' vintage (e.g., 2007, 2012, 2020).", back: "Defined by high heat and dry conditions, leading to powerful, ripe, higher-alcohol wines, especially reds." },
+                { front: "Describe a 'Classic & Balanced' vintage (e.g., 2014, 2016).", back: "Featured moderate, even weather, producing wines with ideal balance between ripeness, acidity, and structure." },
+                { front: "What two issues defined the difficult 2023 vintage in the Okanagan?", back: "A preceding winter deep freeze that culled over 50% of the crop, and summer wildfire smoke taint concerns." },
+                { front: "Which 'Rising Star' winery in Niagara is garnering attention for its precise, terroir-driven wines from the Twenty Mile Bench?", back: "Mason Vineyard" },
+                { front: "Which 'Value Champion' winery is located on the Golden Mile Bench and known for its 'Character' blends?", back: "Hester Creek Estate Winery" },
+                { front: "What is the top cuvée from Poplar Grove on the Naramata Bench?", back: "The Legacy (a Bordeaux-style blend)." },
+            ]
+        }
+    }
+};
+
+// --- APPLICATION LOGIC ---
+document.addEventListener('DOMContentLoaded', () => {
+    // --- STATE MANAGEMENT ---
+    let currentModule = null;
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let questions = [];
+    let userApiKey = localStorage.getItem('geminiApiKey') || '';
+
+    // --- DOM ELEMENTS ---
+    const mainMenu = document.getElementById('main-menu');
+    const gameScreen = document.getElementById('game-screen');
+    const moduleTitle = document.getElementById('module-title');
+    const scoreCounter = document.getElementById('score-counter');
+    const questionCounter = document.getElementById('question-counter');
+    const questionText = document.getElementById('question-text');
+    const optionsContainer = document.getElementById('options-container');
+    const nextQuestionBtn = document.getElementById('next-question-btn');
+    const mainMenuBtn = document.getElementById('main-menu-btn');
+    const explanationPanel = document.getElementById('explanation-panel');
+    const aiButtonPanel = document.getElementById('ai-button-panel');
+    const timelineContainer = document.getElementById('timeline-container');
+    const submitTimelineBtn = document.getElementById('submit-timeline-btn');
+    const flashcardContainer = document.getElementById('flashcard-container');
+    const mcContainer = document.getElementById('mc-container');
+
+    // Modals
+    const modalBackdrop = document.getElementById('modal-backdrop');
+    const welcomeModal = document.getElementById('welcome-modal');
+    const instructionModal = document.getElementById('instruction-modal');
+    const endGameModal = document.getElementById('end-game-modal');
+    const aiSettingsModal = document.getElementById('ai-settings-modal');
+    const flashcardDeckBuilder = document.getElementById('flashcard-deck-builder');
+    const aiResponseModal = document.getElementById('ai-response-modal');
+    
+    // --- HELPER FUNCTIONS ---
+    const showScreen = (screenId) => {
+        mainMenu.classList.add('hidden');
+        gameScreen.classList.add('hidden');
+        document.getElementById(screenId).classList.remove('hidden');
+    };
+
+    const openModal = (modalId) => {
+        modalBackdrop.classList.remove('hidden');
+        document.getElementById(modalId).classList.remove('hidden');
+    };
+
+    const closeModal = () => {
+        modalBackdrop.classList.add('hidden');
+        modalBackdrop.querySelectorAll('.modal-content').forEach(modal => modal.classList.add('hidden'));
+    };
+
+    const shuffleArray = (array) => {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    };
+
+    // --- GAME FLOW ---
+    const startGame = (moduleKey) => {
+        currentModule = moduleKey;
+        const moduleData = gameData[currentModule];
+        
+        closeModal();
+        showScreen('game-screen');
+        
+        moduleTitle.textContent = moduleData.title;
+        score = 0;
+        currentQuestionIndex = 0;
+        scoreCounter.textContent = `Score: ${score}`;
+
+        mcContainer.classList.add('hidden');
+        timelineContainer.classList.add('hidden');
+        flashcardContainer.classList.add('hidden');
+        nextQuestionBtn.classList.add('hidden');
+        submitTimelineBtn.classList.add('hidden');
+
+        if (currentModule === 'historian') {
+            timelineContainer.classList.remove('hidden');
+            submitTimelineBtn.classList.remove('hidden');
+            questions = shuffleArray([...moduleData.questions]).slice(0, 1);
+            displayTimelineQuestion();
+        } else if (currentModule !== 'flashcards') {
+            mcContainer.classList.remove('hidden');
+            questions = shuffleArray([...moduleData.bank]).slice(0, 10);
+            displayQuestion();
+        }
+    };
+
+    const displayQuestion = () => {
+        if (currentQuestionIndex >= questions.length) {
+            endGame();
+            return;
+        }
+
+        const questionData = questions[currentQuestionIndex];
+        questionText.textContent = questionData.question;
+        optionsContainer.innerHTML = '';
+        explanationPanel.classList.add('hidden');
+        aiButtonPanel.classList.add('hidden');
+        aiButtonPanel.innerHTML = '';
+        nextQuestionBtn.classList.add('hidden');
+        questionCounter.textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+
+        const shuffledOptions = shuffleArray([...questionData.options]);
+        shuffledOptions.forEach(option => {
+            const button = document.createElement('button');
+            button.textContent = option;
+            button.className = 'option-btn bg-gray-700 hover:bg-purple-800 text-white font-medium py-3 px-4 rounded-lg transition duration-200';
+            button.addEventListener('click', () => handleAnswer(option, questionData.answer, button, questionData));
+            optionsContainer.appendChild(button);
+        });
+    };
+
+    const handleAnswer = (selectedOption, correctAnswer, selectedButton, questionData) => {
+        const allOptionBtns = optionsContainer.querySelectorAll('.option-btn');
+        allOptionBtns.forEach(btn => {
+            btn.disabled = true;
+            if (btn.textContent === correctAnswer) {
+                btn.classList.remove('bg-gray-700', 'hover:bg-purple-800');
+                btn.classList.add('bg-green-700');
+            }
+        });
+
+        const isCorrect = selectedOption === correctAnswer;
+        if (isCorrect) {
+            score++;
+            scoreCounter.textContent = `Score: ${score}`;
+        } else {
+            selectedButton.classList.remove('bg-gray-700');
+            selectedButton.classList.add('bg-red-700');
+        }
+
+        explanationPanel.innerHTML = `<p class="font-semibold text-purple-300 mb-2">Explanation:</p><p>${questionData.explanation}</p>`;
+        explanationPanel.classList.remove('hidden');
+
+        if (questionData.subjectType && questionData.subjectName) {
+            const aiBtn = document.createElement('button');
+            aiBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded';
+            aiBtn.innerHTML = isCorrect ? `➡️ Dive Deeper into ${questionData.subjectName}` : `💡 Learn More about ${questionData.subjectName}`;
+            aiBtn.addEventListener('click', () => triggerAiFeature(questionData.subjectType, questionData.subjectName));
+            aiButtonPanel.innerHTML = '';
+            aiButtonPanel.appendChild(aiBtn);
+            aiButtonPanel.classList.remove('hidden');
+        }
+
+        nextQuestionBtn.classList.remove('hidden');
+    };
+
+    const endGame = () => {
+        const totalQuestions = currentModule === 'historian' ? questions[0].events.length : questions.length;
+        document.getElementById('final-score').textContent = `${score} / ${totalQuestions}`;
+        openModal('end-game-modal');
+    };
+
+    const displayTimelineQuestion = () => {
+        const questionData = questions[0];
+        questionCounter.textContent = `Challenge 1 of 1`;
+        timelineContainer.innerHTML = `
+            <h3 class="text-xl font-bold mb-4 text-center">${questionData.title}</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h4 class="text-lg font-semibold mb-2 text-center text-purple-300">Available Events</h4>
+                    <div id="source-events" class="space-y-2 p-2 bg-gray-900 rounded-lg min-h-[200px]"></div>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-2 text-center text-purple-300">Your Timeline (Tap to build)</h4>
+                    <div id="player-timeline" class="space-y-2 p-2 bg-gray-900 rounded-lg min-h-[200px]"></div>
+                </div>
+            </div>
+            <div id="timeline-results" class="hidden mt-6"></div>
+        `;
+
+        const sourceContainer = document.getElementById('source-events');
+        const playerContainer = document.getElementById('player-timeline');
+
+        const shuffledEvents = shuffleArray([...questionData.events]);
+        shuffledEvents.forEach(event => {
+            const eventEl = document.createElement('div');
+            eventEl.className = 'p-3 bg-gray-700 rounded-md cursor-pointer hover:bg-purple-800 transition';
+            eventEl.textContent = event.text;
+            eventEl.dataset.year = event.year;
+            eventEl.addEventListener('click', () => {
+                playerContainer.appendChild(eventEl);
+            });
+            sourceContainer.appendChild(eventEl);
+        });
+    };
+
+    const handleSubmitTimeline = () => {
+        const playerTimelineItems = Array.from(document.getElementById('player-timeline').children);
+        const correctOrder = [...questions[0].events].sort((a, b) => a.year - b.year);
+        
+        let correctCount = 0;
+        playerTimelineItems.forEach((item, index) => {
+            item.classList.add('timeline-item');
+            const playerYear = parseInt(item.dataset.year);
+            const correctYearAtIndex = correctOrder[index] ? correctOrder[index].year : null;
+            
+            if (correctYearAtIndex !== null && playerYear === correctYearAtIndex) {
+                 item.classList.add('correct');
+                 correctCount++;
+            } else {
+                 item.classList.add('incorrect');
+            }
+        });
+
+        score = correctCount;
+        scoreCounter.textContent = `Score: ${score}`;
+        
+        const resultsContainer = document.getElementById('timeline-results');
+        resultsContainer.classList.remove('hidden');
+        resultsContainer.innerHTML = `
+            <h4 class="text-lg font-semibold mb-2 text-center text-purple-300">Correct Timeline</h4>
+            <div class="space-y-2 p-2 bg-gray-900 rounded-lg">
+                ${correctOrder.map(event => `<div class="p-3 bg-green-900 rounded-md">${event.year}: ${event.text}</div>`).join('')}
+            </div>
+        `;
+        
+        submitTimelineBtn.classList.add('hidden');
+        nextQuestionBtn.classList.remove('hidden');
+    };
+
+    let flashcardDeck = [];
+    let currentCardIndex = 0;
+
+    const buildFlashcardDecks = () => {
+        const topicsContainer = document.getElementById('flashcard-topics');
+        topicsContainer.innerHTML = `
+            <div>
+                <label class="flex items-center space-x-3">
+                    <input type="checkbox" id="select-all-topics" class="form-checkbox h-5 w-5 text-purple-600 bg-gray-700 border-gray-600 rounded">
+                    <span class="text-white font-bold">Select All</span>
+                </label>
+            </div>
+        `;
+        Object.keys(gameData.flashcards.decks).forEach(key => {
+            const label = document.createElement('label');
+            label.className = 'flex items-center space-x-3';
+            label.innerHTML = `
+                <input type="checkbox" data-deck="${key}" class="topic-checkbox form-checkbox h-5 w-5 text-purple-600 bg-gray-700 border-gray-600 rounded">
+                <span class="text-white">${gameData[key].title}</span>
+            `;
+            topicsContainer.appendChild(label);
+        });
+
+        document.getElementById('select-all-topics').addEventListener('change', (e) => {
+            document.querySelectorAll('.topic-checkbox').forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+            });
+        });
+    };
+    
+    const startFlashcardSession = () => {
+        flashcardDeck = [];
+        const selectedTopics = document.querySelectorAll('.topic-checkbox:checked');
+        if (selectedTopics.length === 0) {
+            alert("Please select at least one topic to study.");
+            return;
+        }
+        selectedTopics.forEach(checkbox => {
+            const deckKey = checkbox.dataset.deck;
+            flashcardDeck.push(...gameData.flashcards.decks[deckKey]);
+        });
+
+        flashcardDeck = shuffleArray(flashcardDeck);
+        currentCardIndex = 0;
+        
+        closeModal();
+        showScreen('game-screen');
+        moduleTitle.textContent = gameData.flashcards.title;
+        scoreCounter.classList.add('hidden');
+        questionCounter.classList.add('hidden');
+        mcContainer.classList.add('hidden');
+        flashcardContainer.classList.remove('hidden');
+        
+        displayFlashcard();
+    };
+
+    const displayFlashcard = () => {
+        if (flashcardDeck.length === 0) {
+            flashcardContainer.innerHTML = `<p class="text-center">No cards in this deck. Please return to the main menu.</p>`;
+            return;
+        }
+        const cardData = flashcardDeck[currentCardIndex];
+        const flashcard = document.getElementById('flashcard');
+        flashcard.classList.remove('is-flipped');
+        
+        setTimeout(() => {
+            document.getElementById('flashcard-front').innerHTML = `<p class="text-xl">${cardData.front.replace(/\n/g, '<br>')}</p>`;
+            document.getElementById('flashcard-back').innerHTML = `<p class="text-lg">${cardData.back.replace(/\n/g, '<br>')}</p>`;
+            document.getElementById('flashcard-progress').textContent = `Card ${currentCardIndex + 1} of ${flashcardDeck.length}`;
+        }, 150);
+    };
+
+    const triggerAiFeature = async (subjectType, subjectName) => {
+        if (!userApiKey) {
+            alert("Please set your Google AI Studio API key in the 'AI Settings' on the main menu to use this feature.");
+            openModal('ai-settings-modal');
+            return;
+        }
+
+        let prompt = '';
+        const region = gameData.regionName;
+        let title = `AI Analysis`;
+
+        const prompts = {
+            grape: `You are a master ampelographer and wine educator with a specialization in ${region}. Your task is to profile the grape: ${subjectName}. Your response must follow this strict pyramid of importance: 1. The grape's specific expression and role within ${region}. 2. Its general viticultural characteristics as they manifest in ${region}'s climate. 3. Its history within the region. Your entire response must be framed through the lens of ${region}. Synthesize information from authoritative sources, but always prioritize the context of ${region}. Structure your response with the following sections:<h3>Overview and History in ${region}</h3><h3>Viticultural Characteristics in ${region}</h3><h3>Typical ${region} Wine Profile</h3>Format the output in simple HTML.`,
+            wine: `You are a world-renowned wine critic specializing exclusively in the wines of ${region}. Your task is to write a professional profile for the following iconic ${region} topic: ${subjectName}. Your analysis must adhere to a strict pyramid of importance: 1) The specific subject's style or character. 2) The character of its specific appellation within ${region}. 3) The general characteristics of ${region}. Do not mention wines from other regions unless making a direct, essential stylistic comparison. Synthesize information from authoritative sources like Vinous, The Wine Advocate, and JancisRobinson.com, but ensure the final note is your own expert synthesis. Format in simple HTML.`,
+            dish: `You are a master sommelier and food theorist specializing in the cuisine and wine of ${region}. Your task is to explain the classic wine pairing for the dish: ${subjectName}. Your explanation must follow this strict pyramid of importance: 1. The specific characteristics of the dish as found in the region. 2. The typical profile of a ${region} wine that pairs with it. 3. The underlying gastronomic principles (complement, contrast, texture) that make the pairing successful within the context of ${region}'s culture. Synthesize information from expert sources, but frame your entire response within the context of ${region}. Format in simple HTML.`,
+            ingredient: `You are a food and wine expert specializing in the cuisine of ${region}. Your task is to provide a detailed overview of the ingredient: ${subjectName}. Your response must follow this strict pyramid of importance: 1. How this ingredient is used in the local cuisine of ${region}. 2. Its typical flavor and aromatic profile. 3. How its profile might be reflected in or complement the local wines, but do not focus on specific pairings unless it is intrinsic to the ingredient itself. Synthesize from authoritative sources. Format in simple HTML.`,
+            spirit: `You are an expert on the spirits and liqueurs of France, with a specialization in ${region}. Your task is to provide a detailed overview of ${subjectName}. Your response must follow this strict pyramid of importance: 1. How ${subjectName} is made and consumed specifically within ${region}. 2. Its key ingredients and typical flavor profile. 3. Its cultural significance in ${region}. Do not focus on wine pairings unless it is a key part of its consumption. Synthesize information from authoritative sources. Format in simple HTML.`
+        };
+        prompts.producer = prompts.vintage = prompts.place = prompts.wine;
+        prompts.wine_pairing = prompts.dish;
+        prompts.liqueur = prompts.spirit;
+        
+        prompt = prompts[subjectType];
+        title = `${subjectType.charAt(0).toUpperCase() + subjectType.slice(1)} Profile: ${subjectName}`;
+
+        document.getElementById('ai-response-title').textContent = title;
+        const contentDiv = document.getElementById('ai-response-content');
+        contentDiv.innerHTML = '<p>Generating response with Gemini... Please wait.</p>';
+        openModal('ai-response-modal');
+
+        try {
+            const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+            const payload = { contents: chatHistory };
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${userApiKey}`;
+            
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error.message || `API Error: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.candidates && result.candidates[0].content.parts.length > 0) {
+                contentDiv.innerHTML = result.candidates[0].content.parts[0].text;
+            } else {
+                contentDiv.innerHTML = '<p>Sorry, the AI could not generate a response.</p>';
+            }
+        } catch (error) {
+            console.error("Gemini API Error:", error);
+            contentDiv.innerHTML = `<p class="text-red-400">An error occurred: ${error.message}.</p>`;
+        }
+    };
+
+    document.querySelectorAll('.module-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            const moduleKey = button.dataset.module;
+            const moduleData = gameData[moduleKey];
+            document.getElementById('instruction-title').textContent = moduleData.title;
+            document.getElementById('instruction-text').textContent = moduleData.instructions;
+            
+            if (moduleKey === 'flashcards') {
+                buildFlashcardDecks();
+                openModal('flashcard-deck-builder');
+            } else {
+                openModal('instruction-modal');
+                document.getElementById('instruction-modal').dataset.moduleKey = moduleKey;
+            }
+        });
+    });
+
+    document.getElementById('instruction-modal').querySelector('.modal-close-btn').addEventListener('click', (e) => {
+        const moduleKey = e.target.closest('#instruction-modal').dataset.moduleKey;
+        if (moduleKey) startGame(moduleKey);
+    });
+
+    document.getElementById('start-flashcard-session-btn').addEventListener('click', startFlashcardSession);
+
+    nextQuestionBtn.addEventListener('click', () => {
+        if (currentModule === 'historian') {
+            endGame();
+        } else {
+            currentQuestionIndex++;
+            displayQuestion();
+        }
+    });
+
+    mainMenuBtn.addEventListener('click', () => {
+        showScreen('main-menu');
+        scoreCounter.classList.remove('hidden');
+    });
+    
+    submitTimelineBtn.addEventListener('click', handleSubmitTimeline);
+
+    document.querySelectorAll('.modal-close-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const modal = e.target.closest('.modal-content');
+            if (modal.id === 'instruction-modal' || modal.id === 'flashcard-deck-builder' && e.target.id !== 'start-flashcard-session-btn') {
+                // Special handling for start buttons is already done
+            } else {
+                 closeModal();
+                 if (modal.id === 'end-game-modal') {
+                    showScreen('main-menu');
+                }
+            }
+        });
+    });
+
+    document.getElementById('ai-settings-btn').addEventListener('click', () => openModal('ai-settings-modal'));
+    document.getElementById('save-api-key-btn').addEventListener('click', () => {
+        const key = document.getElementById('api-key-input').value;
+        userApiKey = key;
+        localStorage.setItem('geminiApiKey', key);
+        alert('API Key saved!');
+        closeModal();
+    });
+
+    document.getElementById('flashcard').addEventListener('click', () => {
+        document.getElementById('flashcard').classList.toggle('is-flipped');
+    });
+    document.getElementById('prev-card-btn').addEventListener('click', () => {
+        if (currentCardIndex > 0) {
+            currentCardIndex--;
+            displayFlashcard();
+        }
+    });
+    document.getElementById('next-card-btn').addEventListener('click', () => {
+        if (currentCardIndex < flashcardDeck.length - 1) {
+            currentCardIndex++;
+            displayFlashcard();
+        }
+    });
+
+    openModal('welcome-modal');
+});
+</script>
+
+</body>
+</html>
